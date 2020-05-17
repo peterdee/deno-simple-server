@@ -1,4 +1,4 @@
-import { serve, ServerRequest } from 'https://deno.land/std@0.50.0/http/server.ts';
+import { serve } from 'https://deno.land/std@0.50.0/http/server.ts';
 
 import { ResponseEvent } from './types.ts';
 
@@ -19,13 +19,18 @@ console.log(`-- Deno running on port ${port}`);
 
 // handle incoming requests
 for await (const req of server) {
-  // create an event listener for the worker
-  worker.addEventListener(
-    'message',
-    (event: ResponseEvent) => req.respond({
+  // event listener handler
+  const handler = (event: ResponseEvent) => {    
+    // remove an event listener
+    worker.removeEventListener('message', handler);
+
+    req.respond({
       body: event.data?.response,
-    }),
-  );
+    });
+  }
+
+  // create an event listener for the worker
+  worker.addEventListener('message', handler);
   
   // get the response text from a worker
   worker.postMessage({ action: 'response' });
